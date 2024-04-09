@@ -4,7 +4,7 @@ import firebase from 'firebase/compat/app';
 import { initializeApp } from "firebase/compat/app";
 import 'firebase/compat/auth'; 
 import 'firebase/compat/firestore';
-import RegistrationScreen from './Register';
+import { useUser } from '../UserContext';
 
 const firebaseConfig = {
     apiKey: "AIzaSyB14p1BBCXK2Fk3dX07gIKY8rLXrgIzDrY",
@@ -23,6 +23,7 @@ firebase.app();
 }
 
 const LoginScreen = ({ navigation }) => {
+   const { setUserEmail } = useUser();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
   
@@ -46,6 +47,7 @@ const LoginScreen = ({ navigation }) => {
                 // Navigate to regular user screen
                 navigation.navigate('Calendar');
               }
+              setUserEmail(email);
             } else {
               Alert.alert('Error', 'User profile not found');
             }

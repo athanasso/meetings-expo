@@ -2,8 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Text, View, StyleSheet, Button, Alert } from "react-native";
 import { Calendar } from "react-native-calendars";
 import firebase from "firebase/compat/app";
+import { useUser } from "../UserContext";
 
 const CalendarScreen = () => {
+  const { userEmail } = useUser();
+
   const [meetings, setMeetings] = useState({});
   const [selectedMeeting, setSelectedMeeting] = useState(null);
 
@@ -43,6 +46,7 @@ const CalendarScreen = () => {
               id: doc.id, // Save document ID for updating later
               date: doc.data().date.toDate().toLocaleDateString(), // Format date
               availableSeats: doc.data().availableSeats,
+              attendees: doc.data().attendees || [],
             });
           }
         });
@@ -55,21 +59,34 @@ const CalendarScreen = () => {
   const handleJoinMeeting = async () => {
     try {
       if (selectedMeeting.availableSeats > 0) {
+        // Check if user's email is already in the attendees array
+        selectedMeeting.attendees.forEach((attendee) => {
+          if (attendee === userEmail) {
+            isUserAlreadyJoined = true;
+            return;
+          }
+        });
+
+        if (isUserAlreadyJoined) {
+          Alert.alert('Already Joined', 'You have already joined this meeting.');
+          return; // Exit the function
+        }
         // Update availableSeats and add user to the meeting
-        await firebase.firestore().collection("meetings").doc(selectedMeeting.id).update({
+        await firebase.firestore().collection('meetings').doc(selectedMeeting.id).update({
           availableSeats: selectedMeeting.availableSeats - 1,
           // Add user's name to an array of attendees
-          attendees: firebase.firestore.FieldValue.arrayUnion("User's Name"), // Replace with actual user's name
+          attendees: firebase.firestore.FieldValue.arrayUnion(userEmail), // Replace with actual user's name
         });
+        
         // Fetch updated meeting details
         handleMeetingPress(selectedMeeting.date);
-        Alert.alert("Success", "You have joined the meeting.");
+        Alert.alert('Success', 'You have joined the meeting.');
       } else {
-        Alert.alert("Error", "No available seats in the meeting.");
+        Alert.alert('Error', 'No available seats in the meeting.');
       }
     } catch (error) {
-      console.error("Error joining meeting:", error);
-      Alert.alert("Error", "Failed to join the meeting.");
+      console.error('Error joining meeting:', error);
+      Alert.alert('Error', 'Failed to join the meeting.');
     }
   };
 

@@ -4,11 +4,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 import CalendarScreen from './components/Calendar';
 import RegistrationScreen from './components/Register';
 import AdminScreen from './components/Admin';
+import { UserProvider } from './UserContext';
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
+    <UserProvider>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Login">
           <Stack.Screen name="Login" component={LoginScreen} />
@@ -17,6 +19,7 @@ export default function App() {
           <Stack.Screen name="Register" component={RegistrationScreen} />
         </Stack.Navigator>
      </NavigationContainer>
+    </UserProvider>
   );
 }
 
