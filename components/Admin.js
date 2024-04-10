@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { View, Button, StyleSheet, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect } from "react";
+import { View, Button, StyleSheet, TextInput, Alert, Text } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import firebase from 'firebase/compat/app';
+import { Calendar } from "react-native-calendars";
 
 const AdminScreen = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [numUsers, setNumUsers] = useState('');
+  const [meetings, setMeetings] = useState({});
+  const [selectedMeeting, setSelectedMeeting] = useState(null);
 
   const handleScheduleMeeting = async () => {
     try {
@@ -26,6 +29,52 @@ const AdminScreen = () => {
     } catch (error) {
       console.error('Error scheduling meeting:', error);
       Alert.alert('Error', 'Failed to schedule meeting');
+    }
+  };
+
+  useEffect(() => {
+    // Fetch meetings from Firestore
+    const fetchMeetings = async () => {
+      try {
+        const meetingsSnapshot = await firebase
+          .firestore()
+          .collection("meetings")
+          .get();
+        const fetchedMeetings = {};
+        meetingsSnapshot.forEach((doc) => {
+          const meetingData = doc.data();
+          const meetingDate = new Date(meetingData.date.toDate());
+          const markedDate = meetingDate.toISOString().split("T")[0];
+          fetchedMeetings[markedDate] = { marked: true, dotColor: "blue" };
+        });
+        setMeetings(fetchedMeetings);
+      } catch (error) {
+        console.error("Error fetching meetings:", error);
+      }
+    };
+
+    fetchMeetings();
+  }, []);
+
+  const handleMeetingPress = async (date) => {
+    try {
+      const meetingDoc = await firebase
+        .firestore()
+        .collection("meetings")
+        .get();
+        meetingDoc.forEach((doc) => {
+          if (doc.data().date.toDate().toISOString().split("T")[0] === date) {
+            setSelectedMeeting({
+              id: doc.id, // Save document ID for updating later
+              date: doc.data().date.toDate().toLocaleDateString(), // Format date
+              availableSeats: doc.data().availableSeats,
+              attendees: doc.data().attendees || [],
+            });
+          }
+        });
+    } catch (error) {
+      console.error("Error fetching meeting details:", error);
+      Alert.alert("Error", "Failed to fetch meeting details");
     }
   };
 
@@ -64,6 +113,23 @@ const AdminScreen = () => {
         keyboardType="numeric"
       />
       <Button title="Schedule Meeting" onPress={handleScheduleMeeting} />
+
+      <Calendar
+        markedDates={meetings}
+        onDayPress={(day) => handleMeetingPress(day.dateString)}
+        />
+        <View style={styles.meetingDetailsContainer}>
+        {selectedMeeting && (
+          <>
+            <Text style={styles.meetingDetails}>
+              Meeting Date: {selectedMeeting.date}
+            </Text>
+            <Text style={styles.meetingDetails}>
+              Available Seats: {selectedMeeting.availableSeats}
+            </Text>
+          </>
+        )}
+      </View>
     </View>
   );
 };
@@ -81,6 +147,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
+  },
+  meetingDetailsContainer: {
+    padding: 20,
+    backgroundColor: "#f0f0f0",
+  },
+  meetingDetails: {
+    fontSize: 16,
+    marginBottom: 10,
   },
 });
   
