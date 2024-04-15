@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Text, View, StyleSheet, Button, Alert } from "react-native";
+import { Text, View, StyleSheet, Button, Alert, ScrollView } from "react-native";
 import { Calendar } from "react-native-calendars";
 import firebase from "firebase/compat/app";
 import { useUser } from "../UserContext";
@@ -105,7 +105,7 @@ const CalendarScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Calendar
         markedDates={meetings}
         onDayPress={(day) => handleMeetingPress(day.dateString)}
@@ -130,14 +130,14 @@ const CalendarScreen = () => {
           </View>
         ))}
       </View>
-    </View>
+    </ScrollView>
   );
 
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: "#fff",
   },
   meetingDetailsContainer: {

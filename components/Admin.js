@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Button, StyleSheet, TextInput, Alert, Text } from 'react-native';
+import { View, Button, StyleSheet, TextInput, Alert, Text, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import firebase from 'firebase/compat/app';
 import { Calendar } from "react-native-calendars";
@@ -107,7 +107,7 @@ const AdminScreen = () => {
   };  
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
      {!showDatePicker ? (
         <Button title="Select Date" onPress={() => setShowDatePicker(true)} />
       ) : (
@@ -168,13 +168,13 @@ const AdminScreen = () => {
           </View>
         ))}
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
