@@ -8,17 +8,24 @@ const AdminScreen = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [meetingName, setMeetingName] = useState('');
   const [numUsers, setNumUsers] = useState('');
   const [meetings, setMeetings] = useState({});
   const [selectedMeeting, setSelectedMeeting] = useState(null);
 
   const handleScheduleMeeting = async () => {
     try {
+      if (!selectedDate || !meetingName || !numUsers) {
+        Alert.alert('Error', 'Please fill in all fields.');
+        return;
+      }
+
       // Convert selectedDate to Firestore Timestamp
       const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
 
       // Update meeting details in Firestore
       await firebase.firestore().collection('meetings').add({
+        name: meetingName,
         date: timestamp,
         numUsers: parseInt(numUsers),
         availableSeats: parseInt(numUsers),
@@ -105,6 +112,12 @@ const AdminScreen = () => {
           mode="time"
         />
       )}
+       <TextInput
+        style={styles.input}
+        placeholder="Meeting Name"
+        value={meetingName}
+        onChangeText={text => setMeetingName(text)}
+      />
       <TextInput
         style={styles.input}
         placeholder="Number of Users"
