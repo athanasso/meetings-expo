@@ -8,7 +8,7 @@ const CalendarScreen = () => {
   const { userEmail } = useUser();
 
   const [meetings, setMeetings] = useState({});
-  const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [selectedMeetings, setSelectedMeetings] = useState([]);
 
   useEffect(() => {
     // Fetch meetings from Firestore
@@ -36,59 +36,64 @@ const CalendarScreen = () => {
 
   const handleMeetingPress = async (date) => {
     try {
-      const meetingDoc = await firebase
+       // Create a range of dates for the selected day
+      const selectedDate = new Date(date);
+      const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+      const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
+
+      // Query meetings within the selected day range
+      const meetingsSnapshot = await firebase
         .firestore()
         .collection("meetings")
+        .where("date", ">=", firebase.firestore.Timestamp.fromDate(startOfDay))
+        .where("date", "<", firebase.firestore.Timestamp.fromDate(endOfDay))
         .get();
-        meetingDoc.forEach((doc) => {
-          if (doc.data().date.toDate().toISOString().split("T")[0] === date) {
-            setSelectedMeeting({
-              id: doc.id, // Save document ID for updating later
-              date: doc.data().date.toDate().toLocaleString("en-US", { 
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric',
-                second: 'numeric',
-                timeZoneName: 'short' 
-              }),
-              availableSeats: doc.data().availableSeats,
-              attendees: doc.data().attendees || [],
-            });
-          }
+  
+      const selectedMeetings = [];
+      meetingsSnapshot.forEach((doc) => {
+        selectedMeetings.push({
+          id: doc.id,
+          name: doc.data().name,
+          date: doc.data().date.toDate().toLocaleString("en-US", { 
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+            timeZoneName: 'short' 
+          }),
+          availableSeats: doc.data().availableSeats,
+          attendees: doc.data().attendees || [],
         });
+      });
+  
+      setSelectedMeetings(selectedMeetings);
+      console.log("Selected Meetings:", selectedMeetings); // Add this line
     } catch (error) {
       console.error("Error fetching meeting details:", error);
       Alert.alert("Error", "Failed to fetch meeting details");
     }
-  };
+  };  
 
-  const handleJoinMeeting = async () => {
+  const handleJoinMeeting = async (meetingId, availableSeats, attendees) => {
     try {
-      if (selectedMeeting.availableSeats > 0) {
-        // Check if user's email is already in the attendees array
-        selectedMeeting.attendees.forEach((attendee) => {
-          if (attendee === userEmail) {
-            isUserAlreadyJoined = true;
-            return;
-          }
-        });
+      // Check if user's email is already in the attendees array
+      const isUserAlreadyJoined = attendees.includes(userEmail);
 
-        if (isUserAlreadyJoined) {
-          Alert.alert('Already Joined', 'You have already joined this meeting.');
-          return; // Exit the function
-        }
+      if (isUserAlreadyJoined) {
+        Alert.alert('Already Joined', 'You have already joined this meeting.');
+        return; // Exit the function
+      }
+
+      if (availableSeats > 0) {
         // Update availableSeats and add user to the meeting
-        await firebase.firestore().collection('meetings').doc(selectedMeeting.id).update({
-          availableSeats: selectedMeeting.availableSeats - 1,
-          // Add user's name to an array of attendees
-          attendees: firebase.firestore.FieldValue.arrayUnion(userEmail), // Replace with actual user's name
+        await firebase.firestore().collection('meetings').doc(meetingId).update({
+          availableSeats: availableSeats - 1,
+          // Add user's email to an array of attendees
+          attendees: firebase.firestore.FieldValue.arrayUnion(userEmail),
         });
-        
-        // Fetch updated meeting details
-        handleMeetingPress(selectedMeeting.date);
         Alert.alert('Success', 'You have joined the meeting.');
       } else {
         Alert.alert('Error', 'No available seats in the meeting.');
@@ -106,23 +111,28 @@ const CalendarScreen = () => {
         onDayPress={(day) => handleMeetingPress(day.dateString)}
       />
       <View style={styles.meetingDetailsContainer}>
-        {selectedMeeting && (
-          <>
+        {selectedMeetings && selectedMeetings.map((meeting, index) => (
+          <View key={index}>
             <Text style={styles.meetingDetails}>
-              Meeting Name: {selectedMeeting.name}
+              Meeting Name: {meeting.name}
             </Text>
             <Text style={styles.meetingDetails}>
-              Meeting Date: {selectedMeeting.date}
+              Meeting Date: {meeting.date}
             </Text>
             <Text style={styles.meetingDetails}>
-              Available Seats: {selectedMeeting.availableSeats}
+              Available Seats: {meeting.availableSeats}
             </Text>
-            <Button title="Join Meeting" onPress={handleJoinMeeting} />
-          </>
-        )}
+            <Button
+              title="Join Meeting"
+              onPress={() => handleJoinMeeting(meeting.id, meeting.availableSeats, meeting.attendees)}
+            />
+            {index !== selectedMeetings.length - 1 && <View style={styles.divider} />}
+          </View>
+        ))}
       </View>
     </View>
   );
+
 };
 
 const styles = StyleSheet.create({
@@ -137,6 +147,11 @@ const styles = StyleSheet.create({
   meetingDetails: {
     fontSize: 16,
     marginBottom: 10,
+  },
+  divider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    marginVertical: 10,
   },
 });
 

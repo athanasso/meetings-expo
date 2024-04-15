@@ -11,7 +11,7 @@ const AdminScreen = () => {
   const [meetingName, setMeetingName] = useState('');
   const [numUsers, setNumUsers] = useState('');
   const [meetings, setMeetings] = useState({});
-  const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [selectedMeetings, setSelectedMeetings] = useState([]);
 
   const handleScheduleMeeting = async () => {
     try {
@@ -65,34 +65,46 @@ const AdminScreen = () => {
 
   const handleMeetingPress = async (date) => {
     try {
-      const meetingDoc = await firebase
+       // Create a range of dates for the selected day
+      const selectedDate = new Date(date);
+      const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+      const endOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
+
+      // Query meetings within the selected day range
+      const meetingsSnapshot = await firebase
         .firestore()
         .collection("meetings")
+        .where("date", ">=", firebase.firestore.Timestamp.fromDate(startOfDay))
+        .where("date", "<", firebase.firestore.Timestamp.fromDate(endOfDay))
         .get();
-        meetingDoc.forEach((doc) => {
-          if (doc.data().date.toDate().toISOString().split("T")[0] === date) {
-            setSelectedMeeting({
-              id: doc.id, // Save document ID for updating later
-              date: doc.data().date.toDate().toLocaleString("en-US", { 
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric',
-                second: 'numeric',
-                timeZoneName: 'short' 
-              }),
-              availableSeats: doc.data().availableSeats,
-              attendees: doc.data().attendees || [],
-            });
-          }
+  
+      const selectedMeetings = [];
+      meetingsSnapshot.forEach((doc) => {
+        selectedMeetings.push({
+          id: doc.id,
+          name: doc.data().name,
+          date: doc.data().date.toDate().toLocaleString("en-US", { 
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+            timeZoneName: 'short' 
+          }),
+          availableSeats: doc.data().availableSeats,
+          attendees: doc.data().attendees || [],
         });
+      });
+  
+      setSelectedMeetings(selectedMeetings);
+      console.log("Selected Meetings:", selectedMeetings); // Add this line
     } catch (error) {
       console.error("Error fetching meeting details:", error);
       Alert.alert("Error", "Failed to fetch meeting details");
     }
-  };
+  };  
 
   return (
     <View style={styles.container}>
@@ -141,19 +153,20 @@ const AdminScreen = () => {
         onDayPress={(day) => handleMeetingPress(day.dateString)}
         />
         <View style={styles.meetingDetailsContainer}>
-        {selectedMeeting && (
-          <>
+        {selectedMeetings && selectedMeetings.map((meeting, index) => (
+          <View key={index}>
             <Text style={styles.meetingDetails}>
-              Meeting Name: {selectedMeeting.name}
+              Meeting Name: {meeting.name}
             </Text>
             <Text style={styles.meetingDetails}>
-              Meeting Date: {selectedMeeting.date}
+              Meeting Date: {meeting.date}
             </Text>
             <Text style={styles.meetingDetails}>
-              Available Seats: {selectedMeeting.availableSeats}
+              Available Seats: {meeting.availableSeats}
             </Text>
-          </>
-        )}
+            {index !== selectedMeetings.length - 1 && <View style={styles.divider} />}
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -180,6 +193,11 @@ const styles = StyleSheet.create({
   meetingDetails: {
     fontSize: 16,
     marginBottom: 10,
+  },
+  divider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    marginVertical: 10,
   },
 });
   
