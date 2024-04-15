@@ -44,7 +44,16 @@ const CalendarScreen = () => {
           if (doc.data().date.toDate().toISOString().split("T")[0] === date) {
             setSelectedMeeting({
               id: doc.id, // Save document ID for updating later
-              date: doc.data().date.toDate().toLocaleDateString(), // Format date
+              date: doc.data().date.toDate().toLocaleString("en-US", { 
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                timeZoneName: 'short' 
+              }),
               availableSeats: doc.data().availableSeats,
               attendees: doc.data().attendees || [],
             });
@@ -99,6 +108,9 @@ const CalendarScreen = () => {
       <View style={styles.meetingDetailsContainer}>
         {selectedMeeting && (
           <>
+            <Text style={styles.meetingDetails}>
+              Meeting Name: {selectedMeeting.name}
+            </Text>
             <Text style={styles.meetingDetails}>
               Meeting Date: {selectedMeeting.date}
             </Text>
