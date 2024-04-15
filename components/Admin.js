@@ -31,6 +31,9 @@ const AdminScreen = () => {
         availableSeats: parseInt(numUsers),
       });
 
+      // Fetch meetings from Firestore again to refresh the calendar
+      fetchMeetings();
+
       // Inform the admin that the meeting is scheduled
       Alert.alert('Meeting Scheduled', 'The meeting has been scheduled successfully.');
     } catch (error) {
@@ -40,28 +43,28 @@ const AdminScreen = () => {
   };
 
   useEffect(() => {
-    // Fetch meetings from Firestore
-    const fetchMeetings = async () => {
-      try {
-        const meetingsSnapshot = await firebase
-          .firestore()
-          .collection("meetings")
-          .get();
-        const fetchedMeetings = {};
-        meetingsSnapshot.forEach((doc) => {
-          const meetingData = doc.data();
-          const meetingDate = new Date(meetingData.date.toDate());
-          const markedDate = meetingDate.toISOString().split("T")[0];
-          fetchedMeetings[markedDate] = { marked: true, dotColor: "blue" };
-        });
-        setMeetings(fetchedMeetings);
-      } catch (error) {
-        console.error("Error fetching meetings:", error);
-      }
-    };
-
     fetchMeetings();
   }, []);
+
+  // Fetch meetings from Firestore
+  const fetchMeetings = async () => {
+    try {
+      const meetingsSnapshot = await firebase
+        .firestore()
+        .collection("meetings")
+        .get();
+      const fetchedMeetings = {};
+      meetingsSnapshot.forEach((doc) => {
+        const meetingData = doc.data();
+        const meetingDate = new Date(meetingData.date.toDate());
+        const markedDate = meetingDate.toISOString().split("T")[0];
+        fetchedMeetings[markedDate] = { marked: true, dotColor: "blue" };
+      });
+      setMeetings(fetchedMeetings);
+    } catch (error) {
+      console.error("Error fetching meetings:", error);
+    }
+  };
 
   const handleMeetingPress = async (date) => {
     try {

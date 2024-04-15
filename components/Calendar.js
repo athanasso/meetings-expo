@@ -11,28 +11,28 @@ const CalendarScreen = () => {
   const [selectedMeetings, setSelectedMeetings] = useState([]);
 
   useEffect(() => {
-    // Fetch meetings from Firestore
-    const fetchMeetings = async () => {
-      try {
-        const meetingsSnapshot = await firebase
-          .firestore()
-          .collection("meetings")
-          .get();
-        const fetchedMeetings = {};
-        meetingsSnapshot.forEach((doc) => {
-          const meetingData = doc.data();
-          const meetingDate = new Date(meetingData.date.toDate());
-          const markedDate = meetingDate.toISOString().split("T")[0];
-          fetchedMeetings[markedDate] = { marked: true, dotColor: "blue" };
-        });
-        setMeetings(fetchedMeetings);
-      } catch (error) {
-        console.error("Error fetching meetings:", error);
-      }
-    };
-
     fetchMeetings();
   }, []);
+
+  // Fetch meetings from Firestore
+  const fetchMeetings = async () => {
+    try {
+      const meetingsSnapshot = await firebase
+        .firestore()
+        .collection("meetings")
+        .get();
+      const fetchedMeetings = {};
+      meetingsSnapshot.forEach((doc) => {
+        const meetingData = doc.data();
+        const meetingDate = new Date(meetingData.date.toDate());
+        const markedDate = meetingDate.toISOString().split("T")[0];
+        fetchedMeetings[markedDate] = { marked: true, dotColor: "blue" };
+      });
+      setMeetings(fetchedMeetings);
+    } catch (error) {
+      console.error("Error fetching meetings:", error);
+    }
+  };
 
   const handleMeetingPress = async (date) => {
     try {
@@ -94,6 +94,10 @@ const CalendarScreen = () => {
           // Add user's email to an array of attendees
           attendees: firebase.firestore.FieldValue.arrayUnion(userEmail),
         });
+
+        // Fetch meetings from Firestore again to refresh the calendar
+        fetchMeetings();
+
         Alert.alert('Success', 'You have joined the meeting.');
       } else {
         Alert.alert('Error', 'No available seats in the meeting.');
