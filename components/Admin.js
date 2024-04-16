@@ -252,8 +252,10 @@ const AdminScreen = () => {
               style={styles.picker}
             >
               <Picker.Item label="Select User" value="" />
-              {users.map((user) => (
-                <Picker.Item key={user.id} label={`${user.name} ${user.surname}`} value={user.id} />
+              {users
+                .filter(user => !selectedMeetings.some(meeting => meeting.id === selectedMeetings[index].id && meeting.attendees.includes(user.email)))
+                .map((user) => (
+                  <Picker.Item key={user.id} label={`${user.name} ${user.surname}`} value={user.id} />
               ))}
             </Picker>
             <Button title="Add User to Meeting" onPress={handleAddUserToMeeting} />
