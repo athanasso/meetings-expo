@@ -153,24 +153,29 @@ const AdminScreen = () => {
     }
   };
 
-  const handleAddUserToMeeting = async (meetingId) => {
+  const handleAddUserToMeeting = async (meetingId, availableSeats) => {
     try {
       // Check if a user and meeting are selected
-      if (!selectedUser || selectedMeetings.length === 0) {
+      if (!selectedUser || meetingId.length === 0) {
         Alert.alert('Error', 'Please select a user and a meeting.');
         return;
       }
 
       // Check if the user's email is already in the meeting attendees list
-      if (selectedMeetings.some(meeting => meeting.attendees.includes(selectedUser.email))) {
-        Alert.alert('Error', 'User is already in the meeting.');
-        return;
+      const meeting = selectedMeetings.find(meeting => meeting.id === meetingId);
+      if (meeting && meeting.attendees.includes(selectedUser.email)) {
+          Alert.alert('Error', 'User is already in the meeting.');
+          return;
       }
 
-      // Update the selected meeting in Firestore to add the user
-      await firebase.firestore().collection('meetings').doc(meetingId).update({
-        attendees: firebase.firestore.FieldValue.arrayUnion(selectedUser.email),
-      });
+      if (availableSeats > 0) {
+        // Update availableSeats and add user to the meeting
+        await firebase.firestore().collection('meetings').doc(meetingId).update({
+          availableSeats: availableSeats - 1,
+          // Add user's email to an array of attendees
+          attendees: firebase.firestore.FieldValue.arrayUnion(selectedUser.email),
+        })
+      };
 
       // Fetch meetings again to refresh the list
       fetchMeetings();
@@ -255,10 +260,10 @@ const AdminScreen = () => {
               {users
                 .filter(user => !selectedMeetings.some(meeting => meeting.id === selectedMeetings[index].id && meeting.attendees.includes(user.email)))
                 .map((user) => (
-                  <Picker.Item key={user.id} label={`${user.name} ${user.surname}`} value={user.id} />
+                  <Picker.Item key={user.id} label={`${user.name} ${user.surname}`} value={user} />
               ))}
             </Picker>
-            <Button title="Add User to Meeting" onPress={handleAddUserToMeeting} />
+            <Button title="Add User to Meeting" onPress={() => handleAddUserToMeeting(meeting.id, meeting.availableSeats)} />
             {index !== selectedMeetings.length - 1 && <View style={styles.divider} />}
           </View>
         ))}
