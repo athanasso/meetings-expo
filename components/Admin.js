@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Button, StyleSheet, TextInput, Alert, Text, ScrollView } from 'react-native';
+import { View, Button, StyleSheet, TextInput, Alert, Text, ScrollView, TouchableOpacity } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import firebase from 'firebase/compat/app';
 import { Calendar } from "react-native-calendars";
@@ -102,12 +102,30 @@ const AdminScreen = () => {
       });
   
       setSelectedMeetings(selectedMeetings);
-      console.log("Selected Meetings:", selectedMeetings); // Add this line
+      console.log("Selected Meetings:", selectedMeetings);
     } catch (error) {
       console.error("Error fetching meeting details:", error);
       Alert.alert("Error", "Failed to fetch meeting details");
     }
   };  
+
+  const handleDeleteMeeting = async (meetingId) => {
+    try {
+      // Delete the meeting from Firestore
+      await firebase.firestore().collection('meetings').doc(meetingId).delete();
+
+      // Fetch meetings from Firestore again to refresh the calendar
+      fetchMeetings();
+
+      setSelectedMeetings([]); // Clear the selected meetings
+
+      // Inform the admin that the meeting has been deleted
+      Alert.alert('Meeting Deleted', 'The meeting has been deleted successfully.');
+    } catch (error) {
+      console.error('Error deleting meeting:', error);
+      Alert.alert('Error', 'Failed to delete meeting');
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -167,6 +185,9 @@ const AdminScreen = () => {
             <Text style={styles.meetingDetails}>
               Available Seats: {meeting.availableSeats}
             </Text>
+            <TouchableOpacity onPress={() => handleDeleteMeeting(meeting.id)} style={styles.deleteButton}>
+              <Text style={styles.buttonText}>Delete Meeting</Text>
+            </TouchableOpacity>
             {index !== selectedMeetings.length - 1 && <View style={styles.divider} />}
           </View>
         ))}
@@ -201,6 +222,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
     marginVertical: 10,
+  },
+  deleteButton: {
+    backgroundColor: '#dc143c',
+    padding: 10,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
   
