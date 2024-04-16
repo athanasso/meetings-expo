@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Text, View, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import firebase from 'firebase/compat/app';
-import { initializeApp } from "firebase/compat/app";
 import 'firebase/compat/auth'; 
 import 'firebase/compat/firestore';
 
 const RegistrationScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [surname, setSurname] = useState('');
 
   const handleRegistration = async () => {
     try {
@@ -18,8 +19,9 @@ const RegistrationScreen = ({ navigation }) => {
       // Create user document in Firestore
       await firebase.firestore().collection('users').doc(user.uid).set({
         email: email,
+        name: name,
+        surname: surname,
         userType: 'user' // Set default user type as 'user'
-        // Add any other user information here
       });
 
       // Navigate to home screen or perform any other action
@@ -32,6 +34,18 @@ const RegistrationScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        placeholder="Name"
+        value={name}
+        onChangeText={text => setName(text)}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Surname"
+        value={surname}
+        onChangeText={text => setSurname(text)}
+      />
       <TextInput
         style={styles.input}
         placeholder="Email"
