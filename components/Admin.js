@@ -3,6 +3,7 @@ import { View, Button, StyleSheet, TextInput, Alert, Text, ScrollView, Touchable
 import DateTimePicker from '@react-native-community/datetimepicker';
 import firebase from 'firebase/compat/app';
 import { Calendar } from "react-native-calendars";
+import { Picker } from '@react-native-picker/picker';
 
 const AdminScreen = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -12,6 +13,8 @@ const AdminScreen = () => {
   const [numUsers, setNumUsers] = useState('');
   const [meetings, setMeetings] = useState({});
   const [selectedMeetings, setSelectedMeetings] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState('');
 
   const handleScheduleMeeting = async () => {
     try {
@@ -44,7 +47,30 @@ const AdminScreen = () => {
 
   useEffect(() => {
     fetchMeetings();
+    fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const usersSnapshot = await firebase
+        .firestore()
+        .collection("users")
+        .where("userType", "==", "user") 
+        .get();
+      const fetchedUsers = [];
+      usersSnapshot.forEach((doc) => {
+        fetchedUsers.push({
+          id: doc.id,
+          name: doc.data().name,
+          surname: doc.data().surname,
+          email: doc.data().email,
+        });
+      });
+      setUsers(fetchedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
 
   // Fetch meetings from Firestore
   const fetchMeetings = async () => {
@@ -127,6 +153,36 @@ const AdminScreen = () => {
     }
   };
 
+  const handleAddUserToMeeting = async (meetingId) => {
+    try {
+      // Check if a user and meeting are selected
+      if (!selectedUser || selectedMeetings.length === 0) {
+        Alert.alert('Error', 'Please select a user and a meeting.');
+        return;
+      }
+
+      // Check if the user's email is already in the meeting attendees list
+      if (selectedMeetings.some(meeting => meeting.attendees.includes(selectedUser.email))) {
+        Alert.alert('Error', 'User is already in the meeting.');
+        return;
+      }
+
+      // Update the selected meeting in Firestore to add the user
+      await firebase.firestore().collection('meetings').doc(meetingId).update({
+        attendees: firebase.firestore.FieldValue.arrayUnion(selectedUser.email),
+      });
+
+      // Fetch meetings again to refresh the list
+      fetchMeetings();
+
+      // Inform the admin that the user has been added to the meeting
+      Alert.alert('User Added', 'The user has been successfully added to the meeting.');
+    } catch (error) {
+      console.error('Error adding user to meeting:', error);
+      Alert.alert('Error', 'Failed to add user to meeting');
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
      {!showDatePicker ? (
@@ -188,6 +244,19 @@ const AdminScreen = () => {
             <TouchableOpacity onPress={() => handleDeleteMeeting(meeting.id)} style={styles.deleteButton}>
               <Text style={styles.buttonText}>Delete Meeting</Text>
             </TouchableOpacity>
+
+            <Text style={styles.label}>Select User to Add to Meeting:</Text>
+            <Picker
+              selectedValue={selectedUser}
+              onValueChange={(itemValue) => setSelectedUser(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Select User" value="" />
+              {users.map((user) => (
+                <Picker.Item key={user.id} label={`${user.name} ${user.surname}`} value={user.id} />
+              ))}
+            </Picker>
+            <Button title="Add User to Meeting" onPress={handleAddUserToMeeting} />
             {index !== selectedMeetings.length - 1 && <View style={styles.divider} />}
           </View>
         ))}
