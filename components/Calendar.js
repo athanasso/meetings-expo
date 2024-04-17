@@ -127,8 +127,9 @@ const CalendarScreen = () => {
               Available Seats: {meeting.availableSeats}
             </Text>
             <Button
-              title="Join Meeting"
+              title={meeting.attendees.includes(userEmail) ? "Already Joined" : "Join Meeting"}
               onPress={() => handleJoinMeeting(meeting.id, meeting.availableSeats, meeting.attendees)}
+              disabled={meeting.attendees.includes(userEmail)}
             />
             {index !== selectedMeetings.length - 1 && <View style={styles.divider} />}
           </View>
