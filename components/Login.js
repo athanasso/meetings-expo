@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import firebase from 'firebase/compat/app';
 import { initializeApp } from "firebase/compat/app";
 import 'firebase/compat/auth'; 
 import 'firebase/compat/firestore';
 import { useUser } from '../UserContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 const firebaseConfig = {
     apiKey: "AIzaSyB14p1BBCXK2Fk3dX07gIKY8rLXrgIzDrY",
@@ -26,6 +28,56 @@ const LoginScreen = ({ navigation }) => {
    const { setUserEmail } = useUser();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+
+    useEffect(() => {
+      const handleBiometricLogin = async (userToken) => {
+          try {
+              const compatible = await LocalAuthentication.hasHardwareAsync() && await LocalAuthentication.isEnrolledAsync();
+              if (compatible) {
+                  const result = await LocalAuthentication.authenticateAsync({
+                      promptMessage: 'Authenticate to login',
+                  });
+                  if (result.success) {
+                      // Biometric authentication successful, navigate to ...
+                      const userDoc = await firebase.firestore().collection('users').doc(userToken).get();
+                      if (userDoc.exists) {
+                        const userType = userDoc.data().userType;
+                        // Check user type
+                        if (userType === 'admin') {
+                          // Navigate to admin screen
+                          navigation.navigate('Admin');
+                        } 
+                        if (userType === 'user'){
+                          // Navigate to regular user screen
+                          navigation.navigate('Calendar');
+                        }
+                  }
+                  } else {
+                      console.log('Biometric authentication failed');
+                  }
+              } else {  
+                  console.log('Biometric authentication not available');
+              }
+          } catch (error) {
+              console.error('Biometric authentication error:', error);
+          }
+      };
+  
+      const checkUserToken = async () => {
+          try {
+              const userToken = await AsyncStorage.getItem('userToken');
+              console.log('User token:', userToken);
+              if (userToken) {
+                  // User token exists, attempt biometric login
+                  handleBiometricLogin(userToken);
+              }
+          } catch (error) {
+              console.error('Error retrieving user token: ', error);
+          }
+      };
+  
+      checkUserToken();
+  }, []);
   
     const handleLogin = () => {
         firebase
@@ -41,10 +93,12 @@ const LoginScreen = ({ navigation }) => {
               // Check user type
               if (userType === 'admin') {
                 // Navigate to admin screen
+                await AsyncStorage.setItem('userToken', user.uid);
                 navigation.navigate('Admin');
               } 
               if (userType === 'user'){
                 // Navigate to regular user screen
+                await AsyncStorage.setItem('userToken', user.uid);
                 navigation.navigate('Calendar');
               }
               setUserEmail(email);

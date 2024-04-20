@@ -3,6 +3,7 @@ import { Text, View, StyleSheet, Button, Alert, ScrollView } from "react-native"
 import { Calendar } from "react-native-calendars";
 import firebase from "firebase/compat/app";
 import { useUser } from "../UserContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CalendarScreen = () => {
   const { userEmail } = useUser();
@@ -11,7 +12,22 @@ const CalendarScreen = () => {
   const [selectedMeetings, setSelectedMeetings] = useState([]);
 
   useEffect(() => {
-    fetchMeetings();
+    const checkUserToken = async () => {
+        try {
+            const userToken = await AsyncStorage.getItem('userToken'); // Ensure AsyncStorage operation is awaited
+            console.log('User token:', userToken);
+            if (!userToken) {
+                navigation.navigate('Login');
+            } else {
+                // Fetch data and perform other actions if user token exists
+                fetchMeetings();
+            }
+        } catch (error) {
+            console.error('Error retrieving user token: ', error);
+        }
+    };
+
+    checkUserToken();
   }, []);
 
   // Fetch meetings from Firestore

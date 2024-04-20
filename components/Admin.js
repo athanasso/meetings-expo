@@ -4,6 +4,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import firebase from 'firebase/compat/app';
 import { Calendar } from "react-native-calendars";
 import { Picker } from '@react-native-picker/picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AdminScreen = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -46,8 +47,23 @@ const AdminScreen = () => {
   };
 
   useEffect(() => {
-    fetchMeetings();
-    fetchUsers();
+    const checkUserToken = async () => {
+        try {
+            const userToken = await AsyncStorage.getItem('userToken'); // Ensure AsyncStorage operation is awaited
+            console.log('User token:', userToken);
+            if (!userToken) {
+                navigation.navigate('Login');
+            } else {
+                // Fetch data and perform other actions if user token exists
+                fetchMeetings();
+                fetchUsers();
+            }
+        } catch (error) {
+            console.error('Error retrieving user token: ', error);
+        }
+    };
+
+    checkUserToken();
   }, []);
 
   const fetchUsers = async () => {
