@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Text, View, StyleSheet, Button, Alert, ScrollView } from "react-native";
 import { Calendar } from "react-native-calendars";
 import firebase from "firebase/compat/app";
-import { useUser } from "../UserContext";
+import { useUser } from "../userContext/UserContext";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CalendarScreen = () => {

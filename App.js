@@ -4,8 +4,27 @@ import { createStackNavigator } from '@react-navigation/stack';
 import CalendarScreen from './components/Calendar';
 import RegistrationScreen from './components/Register';
 import AdminScreen from './components/Admin';
-import { UserProvider } from './UserContext';
+import { UserProvider } from './userContext/UserContext';
 import LogoutButton from './components/LogoutButton';
+import { initializeApp } from "firebase/compat/app";
+import firebase from 'firebase/compat/app';
+
+const firebaseConfig = {
+  apiKey: process.env.apiKey,
+  authDomain: process.env.authDomain,
+  projectId: process.env.projectId,
+  storageBucket: process.env.storageBucket,
+  messagingSenderId: process.env.messagingSenderId,
+  appId: process.env.appId,
+  measurementId: process.env.measurementId
+};
+
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+  } else {
+  firebase.app(); 
+}
 
 const Stack = createStackNavigator();
 

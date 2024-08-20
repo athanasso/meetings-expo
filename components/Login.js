@@ -4,25 +4,9 @@ import firebase from 'firebase/compat/app';
 import { initializeApp } from "firebase/compat/app";
 import 'firebase/compat/auth'; 
 import 'firebase/compat/firestore';
-import { useUser } from '../UserContext';
+import { useUser } from '../userContext/UserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
-
-const firebaseConfig = {
-    apiKey: "AIzaSyB14p1BBCXK2Fk3dX07gIKY8rLXrgIzDrY",
-    authDomain: "expo-demo-ab1fe.firebaseapp.com",
-    projectId: "expo-demo-ab1fe",
-    storageBucket: "expo-demo-ab1fe.appspot.com",
-    messagingSenderId: "885327824422",
-    appId: "1:885327824422:web:f80305674eb6d9ddde48e7",
-    measurementId: "G-BSMPTN6ZZZ"
-};
-
-if (!firebase.apps.length) {
-firebase.initializeApp(firebaseConfig);
-} else {
-firebase.app(); 
-}
 
 const LoginScreen = ({ navigation }) => {
    const { setUserEmail } = useUser();
